@@ -6,6 +6,7 @@ import {
   Category,
   Expense,
   Housing,
+  Income,
   Insurance,
   Investment,
   PaymentMethod,
@@ -14,11 +15,13 @@ import {
   Saving,
   Settings,
   Sheet,
+  Store,
   Subscription,
   Transport,
   Utility,
+  UtilityCategory,
 } from "../models.js";
-import { crudRouter } from "./crud.js";
+import { crudRouter, reorderRouter } from "./crud.js";
 import { baseCostsRouter } from "./baseCosts.js";
 import { dashboardRouter } from "./dashboard.js";
 import { filesRouter, receiptsRouter } from "./files.js";
@@ -74,7 +77,18 @@ expensesRouter.post(
 api.use("/expenses", expensesRouter);
 
 api.use("/categories", crudRouter(Category, { sort: { name: 1 } }));
-api.use("/payment-methods", crudRouter(PaymentMethod, { sort: { name: 1 } }));
+
+// Beállítások alatti, drag-and-drop-pal sorrendezhető listák
+api.use("/payment-methods", reorderRouter(PaymentMethod), crudRouter(PaymentMethod, { sort: { order: 1, name: 1 } }));
+api.use("/stores", reorderRouter(Store), crudRouter(Store, { sort: { order: 1, name: 1 } }));
+api.use(
+  "/utility-categories",
+  reorderRouter(UtilityCategory),
+  crudRouter(UtilityCategory, { sort: { order: 1, name: 1 } }),
+);
+
+// Bevétel (Fizetés / Egyéb kategória)
+api.use("/incomes", crudRouter(Income, { filterFields: ["category"], sort: { date: -1, startDate: -1 } }));
 api.use("/sheets", crudRouter(Sheet, { filterFields: ["year", "month"], sort: { year: -1, month: -1 } }));
 api.use("/subscriptions", crudRouter(Subscription, { filterFields: ["status"], sort: { name: 1 } }));
 api.use("/housing", crudRouter(Housing, { filterFields: ["status"] }));

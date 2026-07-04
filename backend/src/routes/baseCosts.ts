@@ -1,19 +1,22 @@
 import { Router } from "express";
 import { ApiError, asyncHandler } from "../middleware/error.js";
-import { BaseCost, Housing, Insurance, PriceHistory, Subscription, Transport, Utility } from "../models.js";
+import { BaseCost, Housing, Insurance, PriceHistory, Subscription, Transport, Utility, UtilityCategory } from "../models.js";
 import { buildBaseCostItems, type FillSources } from "../services/logic.js";
 
 export const baseCostsRouter = Router();
 
 async function loadSources(userId: string): Promise<FillSources> {
-  const [subscriptions, insurances, housings, utilities, transports, priceHistories] = await Promise.all([
-    Subscription.find({ userId }).lean(),
-    Insurance.find({ userId }).lean(),
-    Housing.find({ userId }).lean(),
-    Utility.find({ userId }).lean(),
-    Transport.find({ userId }).lean(),
-    PriceHistory.find({ userId }).lean(),
-  ]);
+  const [subscriptions, insurances, housings, utilities, transports, priceHistories, utilityCategories] =
+    await Promise.all([
+      Subscription.find({ userId }).lean(),
+      Insurance.find({ userId }).lean(),
+      Housing.find({ userId }).lean(),
+      Utility.find({ userId }).lean(),
+      Transport.find({ userId }).lean(),
+      PriceHistory.find({ userId }).lean(),
+      UtilityCategory.find({ userId }).lean(),
+    ]);
+  const utilityCategoryNames = new Map(utilityCategories.map((c) => [String(c._id), c.name]));
   return {
     subscriptions: subscriptions.map((s) => ({
       id: String(s._id),
@@ -42,8 +45,9 @@ async function loadSources(userId: string): Promise<FillSources> {
     })),
     utilities: utilities.map((u) => ({
       id: String(u._id),
-      type: u.type,
+      type: u.type ?? null,
       name: u.name,
+      categoryName: u.categoryId ? (utilityCategoryNames.get(String(u.categoryId)) ?? null) : null,
       paymentMethodId: u.paymentMethodId ? String(u.paymentMethodId) : null,
       dueDay: u.dueDay ?? null,
     })),

@@ -64,6 +64,40 @@ export function isDueInMonth(frequency: string, anchor: Date | null, year: numbe
   return diff >= 0 && diff % every === 0;
 }
 
+export interface IncomeEntry {
+  category: string; // "fizetes" | "egyeb"
+  /** Fizetésnél a kapcsolt Ártörténet-bejegyzés összege, Egyébnél a saját összeg. */
+  amount: number;
+  startDate: Date | null;
+  date: Date | null;
+}
+
+/**
+ * Éves bevétel kategóriánként. A Fizetés a Kezdés dátumától havonta ismétlődik
+ * (az aktuális évben csak a már eltelt hónapokig számolva), az Egyéb egyszeri
+ * tétel a saját dátuma szerinti évben.
+ */
+export function yearlyIncomeTotals(
+  incomes: IncomeEntry[],
+  year: number,
+  now: Date,
+): { salary: number; other: number } {
+  const lastMonth = year < now.getFullYear() ? 12 : year > now.getFullYear() ? 0 : now.getMonth() + 1;
+  let salary = 0;
+  let other = 0;
+  for (const income of incomes) {
+    if (income.category === "fizetes") {
+      if (!income.startDate) continue;
+      for (let month = 1; month <= lastMonth; month++) {
+        if (monthsBetween(income.startDate, new Date(year, month - 1, 1)) >= 0) salary += income.amount;
+      }
+    } else if (income.date && income.date.getFullYear() === year) {
+      other += income.amount;
+    }
+  }
+  return { salary, other };
+}
+
 export interface BaseCostItemDraft {
   name: string;
   dueDate: Date | null;
@@ -103,8 +137,9 @@ export interface FillSources {
   }[];
   utilities: {
     id: string;
-    type: string;
+    type: string | null;
     name: string;
+    categoryName: string | null;
     paymentMethodId: string | null;
     dueDay: number | null;
   }[];
@@ -197,7 +232,7 @@ export function buildBaseCostItems(sources: FillSources, effectiveDate: Date): B
     const amount = resolveAmount(0, pricePointsFor(sources.priceHistories, "utility", u.id), effectiveDate);
     if (amount <= 0) continue; // rezsihez árat az Ártörténet ad
     items.push({
-      name: u.name || UTILITY_LABELS[u.type] || u.type,
+      name: u.name || u.categoryName || UTILITY_LABELS[u.type ?? ""] || "Rezsi",
       dueDate: u.dueDay ? new Date(year, month - 1, u.dueDay) : null,
       paymentMethodId: u.paymentMethodId,
       amount,

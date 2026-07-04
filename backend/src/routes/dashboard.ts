@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/error.js";
-import { BaseCost, Category, Expense, Investment, Saving, Sheet, Transport } from "../models.js";
+import { BaseCost, Category, Expense, Income, Investment, PriceHistory, Saving, Sheet, Transport } from "../models.js";
+import { yearlyIncomeTotals } from "../services/logic.js";
 
 export const dashboardRouter = Router();
 
@@ -12,7 +13,7 @@ dashboardRouter.get(
     const yearStart = new Date(year, 0, 1);
     const yearEnd = new Date(year + 1, 0, 1);
 
-    const [expenses, baseCosts, sheets, investments, savings, transports, categories] = await Promise.all([
+    const [expenses, baseCosts, sheets, investments, savings, transports, categories, incomes] = await Promise.all([
       Expense.find({ userId, year }).lean(),
       BaseCost.find({ userId, year }).lean(),
       Sheet.find({ userId, year }).lean(),
@@ -20,7 +21,26 @@ dashboardRouter.get(
       Saving.find({ userId, date: { $gte: yearStart, $lt: yearEnd } }).lean(),
       Transport.find({ userId, date: { $gte: yearStart, $lt: yearEnd } }).lean(),
       Category.find({ userId }).lean(),
+      Income.find({ userId }).lean(),
     ]);
+
+    // Bevétel kimutatás: a Fizetés összegét a kapcsolt Ártörténet-bejegyzés adja
+    const salaryEntryIds = [...new Set(incomes.map((i) => i.priceHistoryId).filter(Boolean).map(String))];
+    const salaryEntries = await PriceHistory.find({ userId, _id: { $in: salaryEntryIds } }).lean();
+    const salaryAmounts = new Map(salaryEntries.map((p) => [String(p._id), p.amount]));
+    const incomeTotals = yearlyIncomeTotals(
+      incomes.map((i) => ({
+        category: i.category,
+        amount:
+          i.category === "fizetes"
+            ? (i.priceHistoryId ? (salaryAmounts.get(String(i.priceHistoryId)) ?? 0) : 0)
+            : (i.amount ?? 0),
+        startDate: i.startDate ?? null,
+        date: i.date ?? null,
+      })),
+      year,
+      new Date(),
+    );
 
     // Havi bevétel / kiadás (kiadás = havi tételek + alap költség tételek)
     const months = Array.from({ length: 12 }, (_, i) => ({
@@ -87,6 +107,7 @@ dashboardRouter.get(
       topStores,
       investmentTotal: investments.reduce((a, i) => a + i.amountInHUF, 0),
       savingTotal: savings.reduce((a, s) => a + s.amount, 0),
+      income: incomeTotals,
       yearlySummary: {
         utility: bySource.utility,
         transport: transportTotal,

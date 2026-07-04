@@ -1,4 +1,4 @@
-import { BaseCost, Expense, Insurance, PriceHistory, Sheet, Subscription } from "../models.js";
+import { BaseCost, Expense, Income, Insurance, PriceHistory, Sheet, Store, Subscription, Utility, UtilityCategory } from "../models.js";
 import { formatDateHu, usageInterval } from "./logic.js";
 import { ApiError } from "../middleware/error.js";
 
@@ -37,8 +37,30 @@ export async function checkUsage(userId: string, entityType: string, id: string)
       for (const s of subs) usages.push(`Előfizetés — ${s.name}`);
       const ins = await Insurance.find({ userId, paymentMethodId: id }).lean();
       for (const i of ins) usages.push(`Biztosítás — ${i.name}`);
+      const utils = await Utility.find({ userId, paymentMethodId: id }).lean();
+      for (const u of utils) usages.push(`Rezsi — ${u.name || "tétel"}`);
       const bcs = await BaseCost.find({ userId, "items.paymentMethodId": id }).lean();
       for (const b of bcs) usages.push(`Alap költség — ${ym(b.year, b.month)}`);
+      const exps = await Expense.find({ userId, paymentMethodId: id }).lean();
+      for (const e of exps) usages.push(`Havi költség tétel — ${e.name} (${ym(e.year, e.month)})`);
+      break;
+    }
+
+    case "store": {
+      const store = await Store.findOne({ _id: id, userId }).lean();
+      if (!store) throw new ApiError(404, "A bolt nem található", "NOT_FOUND");
+      const rows = await Expense.find({ userId, store: store.name }).lean();
+      const byMonth = new Map<string, number>();
+      for (const r of rows) byMonth.set(ym(r.year, r.month), (byMonth.get(ym(r.year, r.month)) ?? 0) + 1);
+      for (const [key, count] of [...byMonth.entries()].sort()) {
+        usages.push(`Havi költség — ${key} hónap (${count} tétel)`);
+      }
+      break;
+    }
+
+    case "utilityCategory": {
+      const utils = await Utility.find({ userId, categoryId: id }).lean();
+      for (const u of utils) usages.push(`Rezsi — ${u.name || "tétel"}`);
       break;
     }
 
@@ -71,6 +93,9 @@ export async function checkUsage(userId: string, entityType: string, id: string)
           for (const b of affected) usages.push(`Alap költség — ${ym(b.year, b.month)}`);
         }
       }
+      // Fizetés ártörténet-bejegyzésre Bevétel hivatkozhat
+      const incomes = await Income.find({ userId, priceHistoryId: id }).lean();
+      for (const inc of incomes) usages.push(`Bevétel — ${inc.companyName || "Fizetés"}`);
       break;
     }
 

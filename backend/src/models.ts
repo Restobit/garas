@@ -21,7 +21,48 @@ const paymentMethodSchema = new Schema(
   {
     userId: userField(),
     name: { type: String, required: true },
+    order: { type: Number, default: 0 },
     isSeed: { type: Boolean, default: false },
+  },
+  opts,
+);
+
+// --- Bolt (Beállítások alatt kezelt lista, a Havi költség bolt-mező forrása) ---
+const storeSchema = new Schema(
+  {
+    userId: userField(),
+    name: { type: String, required: true },
+    order: { type: Number, default: 0 },
+    isSeed: { type: Boolean, default: false },
+  },
+  opts,
+);
+
+// --- Rezsi kategória (Beállítások alatt kezelt dinamikus lista) ---
+const utilityCategorySchema = new Schema(
+  {
+    userId: userField(),
+    name: { type: String, required: true },
+    order: { type: Number, default: 0 },
+    isSeed: { type: Boolean, default: false },
+  },
+  opts,
+);
+
+// --- Bevétel ---
+const incomeSchema = new Schema(
+  {
+    userId: userField(),
+    category: { type: String, enum: ["fizetes", "egyeb"], required: true },
+    // Fizetés kategória mezői
+    companyName: { type: String, default: "" },
+    startDate: { type: Date, default: null },
+    priceHistoryId: { type: Schema.Types.ObjectId, ref: "PriceHistory", default: null },
+    // Egyéb kategória mezői
+    source: { type: String, default: "" },
+    amount: { type: Number, default: null },
+    note: { type: String, default: "" },
+    date: { type: Date, default: null },
   },
   opts,
 );
@@ -35,8 +76,10 @@ const expenseSchema = new Schema(
     name: { type: String, required: true },
     date: { type: Date, required: true },
     store: { type: String, default: "" },
+    quantity: { type: Number, default: null },
     unitPrice: { type: Number, default: null },
     amount: { type: Number, required: true },
+    paymentMethodId: { type: Schema.Types.ObjectId, ref: "PaymentMethod", default: null },
     note: { type: String, default: "" },
     categoryId: { type: Schema.Types.ObjectId, ref: "Category", default: null },
     attachmentIds: [{ type: Schema.Types.ObjectId, ref: "Attachment" }],
@@ -148,7 +191,9 @@ const housingSchema = new Schema(
 const utilitySchema = new Schema(
   {
     userId: userField(),
-    type: { type: String, enum: ["water", "electricity", "gas", "internet"], required: true },
+    // Dinamikus Rezsi kategória (Beállítások > Rezsi kategória); a type a régi fix lista öröksége
+    categoryId: { type: Schema.Types.ObjectId, ref: "UtilityCategory", default: null },
+    type: { type: String, enum: ["water", "electricity", "gas", "internet", null], default: null },
     name: { type: String, default: "" },
     paymentMethodId: { type: Schema.Types.ObjectId, ref: "PaymentMethod", default: null },
     dueDay: { type: Number, min: 1, max: 28, default: null },
@@ -173,7 +218,7 @@ const insuranceSchema = new Schema(
     documentId: { type: Schema.Types.ObjectId, ref: "Attachment", default: null },
     invoiceId: { type: Schema.Types.ObjectId, ref: "Attachment", default: null },
     note: { type: String, default: "" },
-    linkedType: { type: String, enum: ["car", "home", "person", null], default: null },
+    linkedType: { type: String, enum: ["car", "motor", "home", "person", null], default: null },
     linkedId: { type: Schema.Types.ObjectId, default: null },
     linkedName: { type: String, default: "" },
   },
@@ -258,7 +303,7 @@ const priceHistorySchema = new Schema(
     userId: userField(),
     entityType: {
       type: String,
-      enum: ["service", "insurance", "transport", "utility", "loan", "rent"],
+      enum: ["service", "insurance", "transport", "utility", "loan", "rent", "fizetes"],
       required: true,
     },
     entityId: { type: Schema.Types.ObjectId, default: null },
@@ -288,6 +333,9 @@ function model<S extends Schema>(name: string, schema: S): Model<InferSchemaType
 
 export const Category = model("Category", categorySchema);
 export const PaymentMethod = model("PaymentMethod", paymentMethodSchema);
+export const Store = model("Store", storeSchema);
+export const UtilityCategory = model("UtilityCategory", utilityCategorySchema);
+export const Income = model("Income", incomeSchema);
 export const Expense = model("Expense", expenseSchema);
 export const Receipt = model("Receipt", receiptSchema);
 export const Attachment = model("Attachment", attachmentSchema);

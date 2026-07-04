@@ -6,10 +6,42 @@ import {
   isDueInMonth,
   resolveAmount,
   usageInterval,
+  yearlyIncomeTotals,
   type FillSources,
 } from "./logic.js";
 
 const d = (s: string) => new Date(s);
+
+describe("yearlyIncomeTotals (Dashboard Bevétel kimutatás)", () => {
+  const salary = { category: "fizetes", amount: 450000, startDate: d("2024-03-15"), date: null };
+  const other = { category: "egyeb", amount: 50000, startDate: null, date: d("2025-07-10") };
+
+  it("a Fizetés a kezdéstől havonta ismétlődik, lezárt évben 12 hónapig", () => {
+    expect(yearlyIncomeTotals([salary], 2025, d("2026-07-04"))).toEqual({ salary: 12 * 450000, other: 0 });
+  });
+
+  it("a kezdés évében csak a kezdő hónaptól számol", () => {
+    // 2024: március–december = 10 hónap
+    expect(yearlyIncomeTotals([salary], 2024, d("2026-07-04")).salary).toBe(10 * 450000);
+  });
+
+  it("az aktuális évben csak az eltelt hónapokig számol", () => {
+    expect(yearlyIncomeTotals([salary], 2026, d("2026-07-04")).salary).toBe(7 * 450000);
+  });
+
+  it("a kezdés előtti évre nem számol Fizetést", () => {
+    expect(yearlyIncomeTotals([salary], 2023, d("2026-07-04")).salary).toBe(0);
+  });
+
+  it("az Egyéb bevétel egyszeri, a saját dátuma szerinti évben", () => {
+    expect(yearlyIncomeTotals([other], 2025, d("2026-07-04"))).toEqual({ salary: 0, other: 50000 });
+    expect(yearlyIncomeTotals([other], 2026, d("2026-07-04")).other).toBe(0);
+  });
+
+  it("kezdő dátum nélküli Fizetés kimarad", () => {
+    expect(yearlyIncomeTotals([{ ...salary, startDate: null }], 2025, d("2026-07-04")).salary).toBe(0);
+  });
+});
 
 describe("resolveAmount (ártörténet feloldás)", () => {
   const points = [
@@ -177,8 +209,8 @@ describe("buildBaseCostItems (Alap költség automatikus feltöltés)", () => {
       {
         ...empty,
         utilities: [
-          { id: "u1", type: "water", name: "", paymentMethodId: null, dueDay: 15 },
-          { id: "u2", type: "gas", name: "", paymentMethodId: null, dueDay: null },
+          { id: "u1", type: "water", name: "", categoryName: "Víz", paymentMethodId: null, dueDay: 15 },
+          { id: "u2", type: "gas", name: "", categoryName: "Gáz", paymentMethodId: null, dueDay: null },
         ],
         priceHistories: [
           { id: "p1", entityType: "utility", entityId: "u1", amount: 6500, effectiveDate: d("2025-01-01") },

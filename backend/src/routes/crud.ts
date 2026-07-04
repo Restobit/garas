@@ -25,6 +25,31 @@ function listFilter(req: Request, filterFields: string[]): Record<string, unknow
   return filter;
 }
 
+/**
+ * Drag-and-drop sorrend mentése: a kapott id-lista sorrendje lesz az `order`.
+ * A generikus CRUD router ELÉ kell mountolni, hogy a POST /reorder ne ütközzön.
+ */
+export function reorderRouter(model: Model<any>): Router {
+  const router = Router();
+  router.post(
+    "/reorder",
+    asyncHandler(async (req, res) => {
+      const ids = (req.body as { ids?: string[] }).ids;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        throw new ApiError(400, "Hiányzik a sorrend", "VALIDATION");
+      }
+      await model.bulkWrite(
+        ids.map((id, index) => ({
+          updateOne: { filter: { _id: id, userId: req.userId }, update: { $set: { order: index } } },
+        })),
+      );
+      const docs = await model.find({ userId: req.userId }).sort({ order: 1, name: 1 });
+      res.json(docs);
+    }),
+  );
+  return router;
+}
+
 /** Generikus, userId-ra szűrt CRUD router. */
 export function crudRouter(model: Model<any>, options: CrudOptions = {}): Router {
   const router = Router();
