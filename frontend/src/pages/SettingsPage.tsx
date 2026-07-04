@@ -2,10 +2,8 @@ import { Box, Grid, MenuItem, Paper, Stack, TextField, Typography } from "@mui/m
 import { useTranslation } from "react-i18next";
 import { useApp } from "../context/AppContext";
 import { useSnackbar } from "../components/SnackbarProvider";
-import { CrudPage } from "../components/CrudPage";
-import type { Category } from "../lib/types";
 
-// --- 16. Beállítások + 18. Kategóriakezelés ---
+// --- Beállítások (a kategóriakezelés a Beállítások > Termék kategória almenübe került) ---
 export function SettingsPage() {
   const { t } = useTranslation();
   const { settings, updateSettings } = useApp();
@@ -51,16 +49,6 @@ export function SettingsPage() {
               </TextField>
             </Stack>
           </Paper>
-        </Grid>
-        <Grid item xs={12} md={7}>
-          {/* Dinamikusan bővíthető kategórialista a Havi költség tételekhez */}
-          <CrudPage<Category>
-            titleKey="settings.categories"
-            entity="categories"
-            usageType="category"
-            fields={[{ name: "name", labelKey: "fields.name", type: "text", required: true }]}
-            columns={[{ key: "name", labelKey: "fields.name" }]}
-          />
         </Grid>
       </Grid>
     </Box>

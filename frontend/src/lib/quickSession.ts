@@ -6,8 +6,10 @@
 export interface QuickItem {
   name: string;
   date: string; // yyyy-MM-dd
-  unitPrice: number | null;
+  quantity: number | null;
+  unitPrice: number | null; // db/ár
   amount: number;
+  paymentMethodId: string | null;
   note: string;
   categoryId: string | null;
 }
@@ -52,6 +54,14 @@ export function removeItem(session: QuickSession, index: number): QuickSession {
   return { ...session, items: session.items.filter((_, i) => i !== index) };
 }
 
+/** Már felvett tétel módosítása a listában (pl. inline kategória-váltás). */
+export function updateItem(session: QuickSession, index: number, patch: Partial<QuickItem>): QuickSession {
+  return {
+    ...session,
+    items: session.items.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+  };
+}
+
 /** A mentéskor a szervernek küldött tételek: a bolt a munkamenetből öröklődik. */
 export function toExpensePayload(session: QuickSession, receiptId: string): Record<string, unknown>[] {
   return session.items.map((item) => {
@@ -60,8 +70,10 @@ export function toExpensePayload(session: QuickSession, receiptId: string): Reco
       name: item.name,
       date: item.date,
       store: session.store,
+      quantity: item.quantity ?? null,
       unitPrice: item.unitPrice,
       amount: item.amount,
+      paymentMethodId: item.paymentMethodId ?? null,
       note: item.note,
       categoryId: item.categoryId,
       receiptId,

@@ -1,19 +1,30 @@
 {
   "app": {
     "name": "Garas",
-    "subtitle": "HKR — Háztartási Költség Rendszer"
+    "subtitle": "Háztartási Költség Rendszer",
+    "acronym": "HKR"
   },
   "menu": {
     "dashboard": "Dashboard",
+    "budget": "Költségvetés",
     "monthly": "Havi költség",
     "baseCost": "Alap költség",
+    "finance": "Pénzügy",
+    "income": "Bevétel",
     "paymentMethod": "Fizetési mód",
+    "utilityCategory": "Rezsi kategória",
+    "store": "Bolt",
     "subscription": "Előfizetés",
     "housing": "Lakhatás",
+    "housingOther": "Egyéb",
+    "productCategory": "Termék kategória",
     "utility": "Rezsi",
     "insurance": "Biztosítás",
     "car": "Autó",
     "transport": "Közlekedés",
+    "travel": "Utazás",
+    "motorcycle": "Motor",
+    "bicycle": "Kerékpár",
     "investment": "Befektetés",
     "saving": "Megtakarítás",
     "priceHistory": "Ártörténet",
@@ -41,12 +52,17 @@
     "loading": "Betöltés…",
     "empty": "Nincs megjeleníthető adat",
     "saved": "Sikeres mentés",
+    "yes": "Igen",
+    "confirmDeleteQuestion": "Biztos, hogy törölni szeretné?",
+    "confirmSaveQuestion": "Biztos, hogy menti a módosításokat?",
     "confirmDeleteTitle": "Biztosan törlöd?",
     "notUsedAnywhere": "Még nincs sehol használva",
     "usedAt": "A törölni kívánt elem az alábbi helyeken van használatban:",
     "total": "Összesen",
     "year": "Év",
-    "month": "Hónap"
+    "month": "Hónap",
+    "comingSoon": "Hamarosan",
+    "expand": "lenyitása"
   },
   "fields": {
     "name": "Név",
@@ -60,7 +76,8 @@
     "note": "Megjegyzés",
     "justification": "Indoklás",
     "currency": "Pénznem",
-    "unitPrice": "Darabár"
+    "unitPrice": "db/ár",
+    "quantity": "Darab"
   },
   "status": {
     "active": "Aktív",
@@ -114,6 +131,8 @@
     "linked": "Kapcsolódás",
     "linkedType": "Kapcsolódás típusa",
     "linkedCar": "Autó",
+    "linkedMotor": "Motor",
+    "linkedMotorName": "Motor megnevezése",
     "linkedHome": "Lakás",
     "linkedPerson": "Személy",
     "linkedPersonName": "Személy neve",
@@ -134,6 +153,7 @@
     "utility": "Rezsi",
     "loan": "Hitel",
     "rent": "Albérlet",
+    "fizetes": "Fizetés",
     "entity": "Kapcsolódó elem",
     "addedDate": "Hozzáadás dátuma",
     "effectiveDate": "Életbelépés dátuma",
@@ -204,7 +224,11 @@
     "expense": "Kiadás",
     "topCategories": "Legtöbb költés kategóriánként",
     "topStores": "Hol vásároltam a legtöbbet",
-    "yearlySummary": "Éves összesítés kategóriánként"
+    "yearlySummary": "Éves összesítés kategóriánként",
+    "incomeSection": "Bevétel",
+    "salaryIncome": "Fizetés",
+    "otherIncome": "Egyéb",
+    "toggleAmount": "Összeg elrejtése / megjelenítése"
   },
   "settings": {
     "language": "Nyelv",
@@ -225,5 +249,22 @@
     "name": "Mit vettem",
     "store": "Bolt / hol vettem",
     "attachments": "Dokumentum csatolás (pdf, jpg, png, xlsx, doc, gif — max 5 MB)"
+  },
+  "income": {
+    "fizetes": "Fizetés",
+    "egyeb": "Egyéb",
+    "companyName": "Cégnév",
+    "startDate": "Kezdés dátuma",
+    "source": "Forrás",
+    "priceHint": "Az Ártörténet Fizetés kategóriájának bejegyzéseiből választható"
+  },
+  "store": {
+    "addToList": "Hozzáadás a boltok listájához",
+    "addedToList": "A bolt bekerült a Beállítások > Bolt listába"
+  },
+  "category": {
+    "addNew": "Új kategória hozzáadása…",
+    "newTitle": "Új kategória",
+    "capitalizeHint": "A név mentéskor kezdő nagybetűt kap"
   }
 }

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Grid,
+  IconButton,
   MenuItem,
   Paper,
   Stack,
@@ -16,6 +17,8 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
@@ -71,7 +74,68 @@ function BarList({ data, color }: { data: { name: string; amount: number }[]; co
   );
 }
 
-function StatTile({ label, amount, color }: { label: string; amount: number; color?: "positive" | "neutral" | "negative" }) {
+/**
+ * Bevétel-csempe saját, perzisztens inkognitó szemmel. A fejléc globális
+ * kapcsolója egyirányúan hat rá: bekapcsoláskor ez is inkognitóba kerül,
+ * kikapcsoláskor viszont inkognitóban MARAD, míg a saját szemével fel nem
+ * fedik — ezért nem a Money komponenst használja.
+ */
+function IncomeTile({ label, amount, storageKey }: { label: string; amount: number; storageKey: string }) {
+  const { t } = useTranslation();
+  const { settings, incognito } = useApp();
+  const idSuffix = storageKey.split(".").pop() ?? "income";
+  const [hidden, setHidden] = useState(() => localStorage.getItem(storageKey) === "true");
+  useEffect(() => {
+    if (incognito) {
+      localStorage.setItem(storageKey, "true");
+      setHidden(true);
+    }
+  }, [incognito, storageKey]);
+  const toggle = () =>
+    setHidden((prev) => {
+      localStorage.setItem(storageKey, String(!prev));
+      return !prev;
+    });
+  return (
+    <Box>
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+        <IconButton
+          size="small"
+          onClick={toggle}
+          aria-label={t("dashboard.toggleAmount")}
+          data-testid={`income-eye-${idSuffix}`}
+        >
+          {hidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+        </IconButton>
+      </Stack>
+      <Typography
+        variant="h5"
+        component="div"
+        data-testid={`income-tile-${idSuffix}`}
+        sx={{
+          color: "success.main",
+          fontVariantNumeric: "tabular-nums",
+          ...(hidden && { filter: "blur(7px)", userSelect: "none" }),
+        }}
+      >
+        {formatMoney(amount, settings?.currency ?? "HUF")}
+      </Typography>
+    </Box>
+  );
+}
+
+function StatTile({
+  label,
+  amount,
+  color,
+}: {
+  label: string;
+  amount: number;
+  color?: "positive" | "neutral" | "negative";
+}) {
   return (
     <Paper sx={{ p: 2.5, height: "100%" }}>
       <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -97,6 +161,9 @@ export function DashboardPage() {
   });
 
   if (!data) return <Typography color="text.secondary">{t("common.loading")}</Typography>;
+
+  // Régebbi backend-válasz (vagy gyorsítótárazott adat) income mező nélkül ne törje el az oldalt
+  const income = data.income ?? { salary: 0, other: 0 };
 
   const summaryRows = [
     { key: "utility", label: t("menu.utility") },
@@ -199,6 +266,31 @@ export function DashboardPage() {
               <BarList data={data.topStores} color={colors.positive} />
             </Paper>
           </Stack>
+        </Grid>
+
+        {/* Bevétel kimutatás — kategóriánként külön, független inkognitó szemmel */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+              {t("dashboard.incomeSection")}
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={6} sm={4} md={3}>
+                <IncomeTile
+                  label={t("dashboard.salaryIncome")}
+                  amount={income.salary}
+                  storageKey="garas.dashboard.incomeIncognito.salary"
+                />
+              </Grid>
+              <Grid item xs={6} sm={4} md={3}>
+                <IncomeTile
+                  label={t("dashboard.otherIncome")}
+                  amount={income.other}
+                  storageKey="garas.dashboard.incomeIncognito.other"
+                />
+              </Grid>
+            </Grid>
+          </Paper>
         </Grid>
 
         {/* Éves összesítés kategóriánként */}

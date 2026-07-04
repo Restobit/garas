@@ -26,6 +26,13 @@ export function formatMoney(
   }).format(value);
 }
 
+/** Kezdő nagybetű (pl. új kategória neve mentés előtt). */
+export function capitalizeFirst(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.charAt(0).toLocaleUpperCase("hu-HU") + trimmed.slice(1);
+}
+
 /** yyyy.MM.dd formátumú dátum. */
 export function formatDate(value: Date | string | null | undefined): string {
   if (!value) return "";

@@ -5,7 +5,7 @@ import { useList } from "../lib/queries";
 import { formatDate } from "../lib/format";
 import type { Housing, Insurance, PriceHistoryEntry, Subscription, Utility } from "../lib/types";
 
-const ENTITY_TYPES = ["service", "insurance", "transport", "utility", "loan", "rent"];
+const ENTITY_TYPES = ["service", "insurance", "transport", "utility", "loan", "rent", "fizetes"];
 
 // --- 14. Ártörténet ---
 export function PriceHistoryPage() {

@@ -120,6 +120,17 @@ export function BaseCostTable({
               </TableCell>
             </TableRow>
           )}
+          {baseCost.items.length > 0 && (
+            <TableRow>
+              <TableCell colSpan={4} align="right" sx={{ fontWeight: 600 }}>
+                {t("common.total")}:
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 600 }}>
+                <Money amount={baseCost.items.reduce((a, i) => a + i.amount, 0)} />
+              </TableCell>
+              <TableCell colSpan={readOnly ? 1 : 2} />
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </TableContainer>

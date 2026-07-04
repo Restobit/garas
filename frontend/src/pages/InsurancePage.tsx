@@ -65,13 +65,15 @@ export function InsurancePage() {
               >
                 <MenuItem value="">—</MenuItem>
                 <MenuItem value="car">{t("insurance.linkedCar")}</MenuItem>
+                <MenuItem value="motor">{t("insurance.linkedMotor")}</MenuItem>
                 <MenuItem value="home">{t("insurance.linkedHome")}</MenuItem>
                 <MenuItem value="person">{t("insurance.linkedPerson")}</MenuItem>
               </TextField>
-              {values.linkedType === "person" ? (
+              {values.linkedType === "person" || values.linkedType === "motor" ? (
+                // Motorhoz még nincs kapcsolható nyilvántartás (placeholder oldal) — név megadásával kapcsolódik
                 <TextField
                   fullWidth
-                  label={t("insurance.linkedPersonName")}
+                  label={t(values.linkedType === "person" ? "insurance.linkedPersonName" : "insurance.linkedMotorName")}
                   value={(values.linkedName as string) ?? ""}
                   onChange={(e) => setValue("linkedName", e.target.value)}
                 />
@@ -132,9 +134,13 @@ export function InsurancePage() {
           render: (r) =>
             r.linkedType === "person"
               ? `${t("insurance.linkedPerson")}: ${r.linkedName}`
-              : r.linkedType
-                ? t(`insurance.linked${r.linkedType === "car" ? "Car" : "Home"}`)
-                : "—",
+              : r.linkedType === "motor"
+                ? r.linkedName
+                  ? `${t("insurance.linkedMotor")}: ${r.linkedName}`
+                  : t("insurance.linkedMotor")
+                : r.linkedType
+                  ? t(`insurance.linked${r.linkedType === "car" ? "Car" : "Home"}`)
+                  : "—",
         },
       ]}
     />

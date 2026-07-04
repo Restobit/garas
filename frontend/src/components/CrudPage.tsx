@@ -24,8 +24,9 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useTranslation } from "react-i18next";
-import { useCreate, useList, useUpdate } from "../lib/queries";
+import { useCreate, useList, useReorder, useUpdate } from "../lib/queries";
 import { useDeleteWithCheck } from "./useDeleteWithCheck";
 import { useSnackbar } from "./SnackbarProvider";
 import type { BaseDoc } from "../lib/types";
@@ -63,6 +64,10 @@ interface CrudPageProps<T extends BaseDoc> {
   /** Mentés előtti átalakítás (pl. számított mezők). */
   beforeSubmit?: (values: FormValues) => FormValues;
   headerExtra?: ReactNode;
+  /** Drag-and-drop sorrend, azonnali automatikus mentéssel (order mező kell hozzá). */
+  sortable?: boolean;
+  /** Szerkesztés mentésekor megerősítő popup (pl. Beállítások > Bolt). */
+  confirmEditSave?: boolean;
 }
 
 function fieldValue(values: FormValues, name: string): string {
@@ -166,16 +171,31 @@ export function CrudPage<T extends BaseDoc>({
   defaults = {},
   beforeSubmit,
   headerExtra,
+  sortable = false,
+  confirmEditSave = false,
 }: CrudPageProps<T>) {
   const { t } = useTranslation();
   const { data: rows = [], isLoading } = useList<T>(entity);
   const create = useCreate<T>(entity);
   const update = useUpdate<T>(entity);
+  const reorder = useReorder<T>(entity);
   const { requestDelete, dialog } = useDeleteWithCheck(entity, usageType);
   const { showError, showSuccess } = useSnackbar();
 
   const [editing, setEditing] = useState<T | null>(null);
   const [values, setValues] = useState<FormValues | null>(null);
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const dropOn = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const next = [...rows];
+    const [moved] = next.splice(dragIndex, 1);
+    if (!moved) return;
+    next.splice(targetIndex, 0, moved);
+    reorder.mutate(next, { onError: showError });
+    setDragIndex(null);
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -203,6 +223,14 @@ export function CrudPage<T extends BaseDoc>({
     }
   };
 
+  const requestSubmit = () => {
+    if (confirmEditSave && editing) {
+      setConfirmSaveOpen(true);
+    } else {
+      submit();
+    }
+  };
+
   return (
     <Box>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
@@ -219,6 +247,7 @@ export function CrudPage<T extends BaseDoc>({
         <Table size="small">
           <TableHead>
             <TableRow>
+              {sortable && <TableCell padding="checkbox" />}
               {columns.map((col) => (
                 <TableCell key={col.key} align={col.align}>
                   {t(col.labelKey)}
@@ -228,8 +257,45 @@ export function CrudPage<T extends BaseDoc>({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row._id} hover>
+            {rows.map((row, index) => (
+              <TableRow
+                key={row._id}
+                hover
+                draggable={sortable}
+                onDragStart={
+                  sortable
+                    ? (e) => {
+                        // Firefoxban setData nélkül el sem indul a drag
+                        e.dataTransfer.setData("text/plain", String(index));
+                        e.dataTransfer.effectAllowed = "move";
+                        setDragIndex(index);
+                      }
+                    : undefined
+                }
+                onDragOver={
+                  sortable
+                    ? (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                      }
+                    : undefined
+                }
+                onDrop={
+                  sortable
+                    ? (e) => {
+                        e.preventDefault();
+                        dropOn(index);
+                      }
+                    : undefined
+                }
+                onDragEnd={sortable ? () => setDragIndex(null) : undefined}
+                sx={sortable ? { cursor: "grab", opacity: dragIndex === index ? 0.5 : 1 } : undefined}
+              >
+                {sortable && (
+                  <TableCell padding="checkbox" sx={{ color: "text.disabled" }}>
+                    <DragIndicatorIcon fontSize="small" sx={{ verticalAlign: "middle" }} />
+                  </TableCell>
+                )}
                 {columns.map((col) => (
                   <TableCell key={col.key} align={col.align}>
                     {col.render ? col.render(row) : String((row as unknown as FormValues)[col.key] ?? "")}
@@ -247,7 +313,7 @@ export function CrudPage<T extends BaseDoc>({
             ))}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={columns.length + 1} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={columns.length + (sortable ? 2 : 1)} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">{isLoading ? t("common.loading") : t("common.empty")}</Typography>
                 </TableCell>
               </TableRow>
@@ -269,8 +335,28 @@ export function CrudPage<T extends BaseDoc>({
         </DialogContent>
         <DialogActions>
           <Button onClick={close}>{t("common.cancel")}</Button>
-          <Button variant="contained" onClick={submit}>
+          <Button variant="contained" onClick={requestSubmit}>
             {t("common.save")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Szerkesztés mentésének megerősítése (confirmEditSave) */}
+      <Dialog open={confirmSaveOpen} onClose={() => setConfirmSaveOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{t("common.save")}</DialogTitle>
+        <DialogContent>
+          <Typography>{t("common.confirmSaveQuestion")}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmSaveOpen(false)}>{t("common.cancel")}</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setConfirmSaveOpen(false);
+              submit();
+            }}
+          >
+            {t("common.yes")}
           </Button>
         </DialogActions>
       </Dialog>

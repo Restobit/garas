@@ -25,10 +25,10 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     {clerkEnabled ? (
       <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY!} afterSignOutUrl="/">
-      {app}
+        {app}
       </ClerkProvider>
     ) : (
       app
     )}
-  </StrictMode>
+  </StrictMode>,
 );

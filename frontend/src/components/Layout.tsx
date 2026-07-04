@@ -4,6 +4,7 @@ import {
   Avatar,
   Badge,
   Box,
+  Collapse,
   Divider,
   Drawer,
   IconButton,
@@ -18,6 +19,8 @@ import {
   useTheme,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -33,11 +36,20 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import ShieldIcon from "@mui/icons-material/Shield";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import TwoWheelerIcon from "@mui/icons-material/TwoWheeler";
+import PedalBikeIcon from "@mui/icons-material/PedalBike";
+import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import SavingsIcon from "@mui/icons-material/Savings";
 import HistoryIcon from "@mui/icons-material/History";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import PaymentsIcon from "@mui/icons-material/Payments";
+import CategoryIcon from "@mui/icons-material/Category";
+import SellIcon from "@mui/icons-material/Sell";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../auth/useOptionalClerk";
@@ -47,23 +59,77 @@ import { formatDate } from "../lib/format";
 
 const DRAWER_WIDTH = 248;
 
-const MENU_ITEMS = [
+interface MenuLeaf {
+  key: string;
+  path: string;
+  icon: ReactNode;
+}
+
+interface MenuNode extends Omit<MenuLeaf, "path"> {
+  /** Ha nincs path, az elem csak lenyitható csoport (nincs saját oldala). */
+  path?: string;
+  children?: MenuLeaf[];
+}
+
+/**
+ * Hierarchikus menü: a path nélküli elemek lenyitható kategóriák, a path-osak
+ * önálló oldalak — a Lakhatás és a Beállítások mindkettő (saját oldal + almenü).
+ */
+const MENU_ITEMS: MenuNode[] = [
   { key: "dashboard", path: "/", icon: <DashboardIcon /> },
-  { key: "monthly", path: "/havi-koltseg", icon: <CalendarMonthIcon /> },
-  { key: "baseCost", path: "/alap-koltseg", icon: <TableChartIcon /> },
-  { key: "paymentMethod", path: "/fizetesi-mod", icon: <CreditCardIcon /> },
-  { key: "subscription", path: "/elofizetes", icon: <SubscriptionsIcon /> },
-  { key: "housing", path: "/lakhatas", icon: <HomeIcon /> },
-  { key: "utility", path: "/rezsi", icon: <BoltIcon /> },
-  { key: "insurance", path: "/biztositas", icon: <ShieldIcon /> },
-  { key: "car", path: "/auto", icon: <DirectionsCarIcon /> },
-  { key: "transport", path: "/kozlekedes", icon: <DirectionsBusIcon /> },
-  { key: "investment", path: "/befektetes", icon: <TrendingUpIcon /> },
-  { key: "saving", path: "/megtakaritas", icon: <SavingsIcon /> },
-  { key: "priceHistory", path: "/artortenet", icon: <HistoryIcon /> },
   { key: "receipt", path: "/blokk", icon: <ReceiptLongIcon /> },
-  { key: "settings", path: "/beallitasok", icon: <SettingsIcon /> },
-] as const;
+  { key: "priceHistory", path: "/artortenet", icon: <HistoryIcon /> },
+  {
+    key: "budget",
+    icon: <AccountBalanceWalletIcon />,
+    children: [
+      { key: "subscription", path: "/elofizetes", icon: <SubscriptionsIcon /> },
+      { key: "baseCost", path: "/alap-koltseg", icon: <TableChartIcon /> },
+      { key: "monthly", path: "/havi-koltseg", icon: <CalendarMonthIcon /> },
+    ],
+  },
+  {
+    key: "finance",
+    icon: <PaymentsIcon />,
+    children: [
+      { key: "income", path: "/bevetel", icon: <AttachMoneyIcon /> },
+      { key: "investment", path: "/befektetes", icon: <TrendingUpIcon /> },
+      { key: "saving", path: "/megtakaritas", icon: <SavingsIcon /> },
+    ],
+  },
+  {
+    key: "housing",
+    icon: <HomeIcon />,
+    children: [
+      { key: "utility", path: "/rezsi", icon: <BoltIcon /> },
+      // Egyéb: a korábbi Lakhatás oldal tartalma (hitel / albérlet)
+      { key: "housingOther", path: "/lakhatas", icon: <HomeIcon /> },
+    ],
+  },
+  { key: "insurance", path: "/biztositas", icon: <ShieldIcon /> },
+
+  {
+    key: "transport",
+    icon: <DirectionsBusIcon />,
+    children: [
+      { key: "travel", path: "/utazas", icon: <FlightTakeoffIcon /> },
+      { key: "car", path: "/auto", icon: <DirectionsCarIcon /> },
+      { key: "motorcycle", path: "/motor", icon: <TwoWheelerIcon /> },
+      { key: "bicycle", path: "/kerekpar", icon: <PedalBikeIcon /> },
+    ],
+  },
+  {
+    key: "settings",
+    path: "/beallitasok",
+    icon: <SettingsIcon />,
+    children: [
+      { key: "paymentMethod", path: "/beallitasok/fizetesi-mod", icon: <CreditCardIcon /> },
+      { key: "utilityCategory", path: "/beallitasok/rezsi-kategoria", icon: <CategoryIcon /> },
+      { key: "productCategory", path: "/beallitasok/termek-kategoria", icon: <SellIcon /> },
+      { key: "store", path: "/beallitasok/bolt", icon: <StorefrontIcon /> },
+    ],
+  },
+];
 
 export function Layout({ children }: { children: ReactNode }) {
   const theme = useTheme();
@@ -76,34 +142,78 @@ export function Layout({ children }: { children: ReactNode }) {
   const { data: unprocessed } = useUnprocessedCount();
   const user = useUser();
 
+  // Az aktív oldalt tartalmazó csoportok induláskor nyitva
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const open: Record<string, boolean> = {};
+    for (const item of MENU_ITEMS) {
+      if (item.children?.some((c) => location.pathname.startsWith(c.path))) open[item.key] = true;
+    }
+    return open;
+  });
+  const toggleGroup = (key: string) => setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const isSelected = (path: string) =>
+    path === "/" ? location.pathname === "/" : location.pathname === path || location.pathname.startsWith(`${path}/`);
+
+  const go = (path: string) => {
+    navigate(path);
+    setMobileOpen(false);
+  };
+
+  const renderLeaf = (item: MenuLeaf, indent = false) => (
+    <ListItemButton
+      key={item.key}
+      selected={isSelected(item.path)}
+      onClick={() => go(item.path)}
+      sx={{ borderRadius: 2, mx: 1, my: 0.25, ...(indent && { pl: 4 }) }}
+    >
+      <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+      <ListItemText primary={t(`menu.${item.key}`)} />
+    </ListItemButton>
+  );
+
   const drawer = (
-    <Box sx={{ overflowY: "auto" }}>
-      <Toolbar>
-        <Box>
-          <Typography variant="h5" color="primary">
-            {t("app.name")}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t("app.subtitle")}
-          </Typography>
-        </Box>
-      </Toolbar>
-      <Divider />
+    <Box sx={{ overflowY: "auto", marginTop: "4rem" }}>
       <List>
-        {MENU_ITEMS.map((item) => (
-          <ListItemButton
-            key={item.key}
-            selected={item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path)}
-            onClick={() => {
-              navigate(item.path);
-              setMobileOpen(false);
-            }}
-            sx={{ borderRadius: 2, mx: 1, my: 0.25 }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-            <ListItemText primary={t(`menu.${item.key}`)} />
-          </ListItemButton>
-        ))}
+        {MENU_ITEMS.map((item) => {
+          if (!item.children) return renderLeaf(item as MenuLeaf);
+          const open = Boolean(openGroups[item.key]);
+          return (
+            <Box key={item.key}>
+              <ListItemButton
+                // Saját oldallal rendelkező szülő (Lakhatás, Beállítások): kattintásra navigál,
+                // a nyíl nyit/zár; oldal nélküli kategória kattintásra csak nyit/zár.
+                selected={item.path ? location.pathname === item.path : false}
+                onClick={() => {
+                  if (item.path) {
+                    go(item.path);
+                    if (!open) toggleGroup(item.key);
+                  } else {
+                    toggleGroup(item.key);
+                  }
+                }}
+                sx={{ borderRadius: 2, mx: 1, my: 0.25 }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                <ListItemText primary={t(`menu.${item.key}`)} />
+                <IconButton
+                  size="small"
+                  edge="end"
+                  aria-label={`${t(`menu.${item.key}`)} ${t("common.expand")}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleGroup(item.key);
+                  }}
+                >
+                  {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                </IconButton>
+              </ListItemButton>
+              <Collapse in={open} timeout="auto" unmountOnExit>
+                <List disablePadding>{item.children.map((child) => renderLeaf(child, true))}</List>
+              </Collapse>
+            </Box>
+          );
+        })}
       </List>
     </Box>
   );
@@ -132,6 +242,28 @@ export function Layout({ children }: { children: ReactNode }) {
               {t("app.name")}
             </Typography>
           )}
+
+          {isDesktop && (
+            <Toolbar>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  width: "100%",
+                  padding: 1,
+                }}
+              >
+                <Typography variant="h5" color="primary">
+                  {t("app.name")} - {t("app.acronym")}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t("app.subtitle")}
+                </Typography>
+              </Box>
+            </Toolbar>
+          )}
+
           <Box sx={{ flexGrow: 1 }} />
           <Tooltip title={mode === "dark" ? t("header.lightMode") : t("header.darkMode")}>
             <IconButton onClick={toggleMode} aria-label={t("header.themeToggle")}>

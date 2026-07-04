@@ -4,13 +4,16 @@ import { Money } from "../components/Money";
 import { useList } from "../lib/queries";
 import { formatDate } from "../lib/format";
 import type {
+  Category,
   Housing,
   Investment,
   PaymentMethod,
   Saving,
+  Store,
   Subscription,
   Transport,
   Utility,
+  UtilityCategory,
 } from "../lib/types";
 
 export function usePaymentMethodOptions(): Option[] {
@@ -23,13 +26,56 @@ function usePaymentMethodName(): (id: string | null) => string {
   return (id) => data.find((pm) => pm._id === id)?.name ?? "—";
 }
 
-// --- 5. Fizetési mód ---
+// --- Beállítások > Fizetési mód (drag-and-drop sorrenddel) ---
 export function PaymentMethodsPage() {
   return (
     <CrudPage<PaymentMethod>
       titleKey="menu.paymentMethod"
       entity="payment-methods"
       usageType="paymentMethod"
+      sortable
+      fields={[{ name: "name", labelKey: "fields.name", type: "text", required: true }]}
+      columns={[{ key: "name", labelKey: "fields.name" }]}
+    />
+  );
+}
+
+// --- Beállítások > Rezsi kategória ---
+export function UtilityCategoriesPage() {
+  return (
+    <CrudPage<UtilityCategory>
+      titleKey="menu.utilityCategory"
+      entity="utility-categories"
+      usageType="utilityCategory"
+      sortable
+      fields={[{ name: "name", labelKey: "fields.name", type: "text", required: true }]}
+      columns={[{ key: "name", labelKey: "fields.name" }]}
+    />
+  );
+}
+
+// --- Beállítások > Termék kategória (a Havi költség tételek kategóriái, korábban a Beállítások oldalon) ---
+export function ProductCategoriesPage() {
+  return (
+    <CrudPage<Category>
+      titleKey="menu.productCategory"
+      entity="categories"
+      usageType="category"
+      fields={[{ name: "name", labelKey: "fields.name", type: "text", required: true }]}
+      columns={[{ key: "name", labelKey: "fields.name" }]}
+    />
+  );
+}
+
+// --- Beállítások > Bolt (mentéskor is megerősítést kér) ---
+export function StoresPage() {
+  return (
+    <CrudPage<Store>
+      titleKey="menu.store"
+      entity="stores"
+      usageType="store"
+      sortable
+      confirmEditSave
       fields={[{ name: "name", labelKey: "fields.name", type: "text", required: true }]}
       columns={[{ key: "name", labelKey: "fields.name" }]}
     />
@@ -74,12 +120,12 @@ export function SubscriptionsPage() {
   );
 }
 
-// --- 7. Lakhatás ---
+// --- Lakhatás > Egyéb (a korábbi Lakhatás oldal tartalma: hitel / albérlet) ---
 export function HousingPage() {
   const { t } = useTranslation();
   return (
     <CrudPage<Housing>
-      titleKey="menu.housing"
+      titleKey="menu.housingOther"
       entity="housing"
       usageType="housing"
       defaults={{ status: "active" }}
@@ -120,28 +166,28 @@ export function HousingPage() {
   );
 }
 
-// --- 8. Rezsi ---
+// --- 8. Rezsi (kategória a Beállítások > Rezsi kategória dinamikus listájából) ---
 export function UtilitiesPage() {
   const { t } = useTranslation();
   const pmOptions = usePaymentMethodOptions();
   const pmName = usePaymentMethodName();
-  const typeOptions = ["water", "electricity", "gas", "internet"].map((v) => ({
-    value: v,
-    label: t(`utility.${v}`),
-  }));
+  const { data: utilityCategories = [] } = useList<UtilityCategory>("utility-categories");
+  const categoryOptions = utilityCategories.map((c) => ({ value: c._id, label: c.name }));
+  const categoryName = (r: Utility) =>
+    utilityCategories.find((c) => c._id === r.categoryId)?.name ?? (r.type ? t(`utility.${r.type}`) : "—");
   return (
     <CrudPage<Utility>
       titleKey="menu.utility"
       entity="utilities"
       usageType="utility"
       fields={[
-        { name: "type", labelKey: "fields.category", type: "select", required: true, options: typeOptions },
+        { name: "categoryId", labelKey: "fields.category", type: "select", required: true, options: categoryOptions },
         { name: "name", labelKey: "utility.providerName", type: "text" },
         { name: "paymentMethodId", labelKey: "fields.paymentMethod", type: "select", options: pmOptions },
         { name: "dueDay", labelKey: "utility.dueDay", type: "number" },
       ]}
       columns={[
-        { key: "type", labelKey: "fields.category", render: (r) => t(`utility.${r.type}`) },
+        { key: "categoryId", labelKey: "fields.category", render: categoryName },
         { key: "name", labelKey: "utility.providerName" },
         { key: "paymentMethodId", labelKey: "fields.paymentMethod", render: (r) => pmName(r.paymentMethodId) },
         { key: "dueDay", labelKey: "utility.dueDay", render: (r) => (r.dueDay ? `${r.dueDay}.` : "—") },
@@ -150,7 +196,7 @@ export function UtilitiesPage() {
   );
 }
 
-// --- 11. Közlekedés ---
+// --- Utazás (korábban Közlekedés — azonos funkcionalitás, új név) ---
 const TRANSPORT_TYPES = ["bkk_pass", "ticket", "train", "bus", "plane", "ferry", "boat", "fuel"];
 
 export function TransportPage() {
@@ -158,7 +204,7 @@ export function TransportPage() {
   const typeOptions = TRANSPORT_TYPES.map((v) => ({ value: v, label: t(`transport.${v}`) }));
   return (
     <CrudPage<Transport>
-      titleKey="menu.transport"
+      titleKey="menu.travel"
       entity="transports"
       usageType="transport"
       fields={[
@@ -169,7 +215,12 @@ export function TransportPage() {
       ]}
       columns={[
         { key: "type", labelKey: "fields.type", render: (r) => t(`transport.${r.type}`) },
-        { key: "amount", labelKey: "fields.amount", align: "right", render: (r) => <Money amount={r.amount} color="negative" /> },
+        {
+          key: "amount",
+          labelKey: "fields.amount",
+          align: "right",
+          render: (r) => <Money amount={r.amount} color="negative" />,
+        },
         { key: "date", labelKey: "fields.date", render: (r) => formatDate(r.date) },
         { key: "note", labelKey: "fields.note" },
       ]}
@@ -249,7 +300,12 @@ export function SavingsPage() {
       ]}
       columns={[
         { key: "destination", labelKey: "saving.destination" },
-        { key: "amount", labelKey: "fields.amount", align: "right", render: (r) => <Money amount={r.amount} color="positive" /> },
+        {
+          key: "amount",
+          labelKey: "fields.amount",
+          align: "right",
+          render: (r) => <Money amount={r.amount} color="positive" />,
+        },
         { key: "date", labelKey: "fields.date", render: (r) => formatDate(r.date) },
         { key: "type", labelKey: "fields.type" },
         { key: "maturityDate", labelKey: "saving.maturityDate", render: (r) => formatDate(r.maturityDate) },

@@ -30,7 +30,10 @@ import { api, fetchFileUrl } from "../lib/api";
 import { useList } from "../lib/queries";
 import { useSnackbar } from "../components/SnackbarProvider";
 import { Money } from "../components/Money";
+import { StoreField } from "../components/StoreField";
+import { CategorySelect } from "../components/CategorySelect";
 import { formatDate, todayInputDate } from "../lib/format";
+import { autoAmount } from "../lib/expenseForm";
 import {
   addItem,
   clearSession,
@@ -38,16 +41,19 @@ import {
   removeItem,
   saveSession,
   toExpensePayload,
+  updateItem,
   type QuickItem,
   type QuickSession,
 } from "../lib/quickSession";
-import type { Category, Expense } from "../lib/types";
+import type { Expense, PaymentMethod } from "../lib/types";
 
 const EMPTY_ITEM: QuickItem = {
   name: "",
   date: todayInputDate(),
+  quantity: null,
   unitPrice: null,
   amount: 0,
+  paymentMethodId: null,
   note: "",
   categoryId: null,
 };
@@ -61,7 +67,7 @@ export function QuickEntryPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { showError, showSuccess } = useSnackbar();
-  const { data: categories = [] } = useList<Category>("categories");
+  const { data: paymentMethods = [] } = useList<PaymentMethod>("payment-methods");
 
   const [session, setSession] = useState<QuickSession>(() => loadSession(localStorage, receiptId));
   const [draft, setDraft] = useState<QuickItem>({ ...EMPTY_ITEM });
@@ -107,8 +113,20 @@ export function QuickEntryPage() {
   const addDraft = () => {
     if (!draft.name || !draft.amount) return;
     setSession((prev) => addItem(prev, { ...draft, amount: Number(draft.amount) }));
-    setDraft({ ...EMPTY_ITEM, date: draft.date, categoryId: draft.categoryId });
+    setDraft({ ...EMPTY_ITEM, date: draft.date, categoryId: draft.categoryId, paymentMethodId: draft.paymentMethodId });
     nameRef.current?.focus();
+  };
+
+  // Darab × db/ár → Összeg automatikus kitöltése (az Összeg kézzel felülírható marad)
+  const setDraftWithAutoAmount = (patch: Partial<QuickItem>) => {
+    setDraft((prev) => {
+      const next = { ...prev, ...patch };
+      if ("quantity" in patch || "unitPrice" in patch) {
+        const amount = autoAmount(next.quantity, next.unitPrice);
+        if (amount !== null) next.amount = amount;
+      }
+      return next;
+    });
   };
 
   return (
@@ -143,14 +161,14 @@ export function QuickEntryPage() {
         {/* Jobb: gyors beviteli űrlap + ideiglenes lista */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2 }}>
-            <TextField
-              label={t("quickEntry.store")}
-              value={session.store}
-              onChange={(e) => setSession((prev) => ({ ...prev, store: e.target.value }))}
-              helperText={t("quickEntry.storeHint")}
-              fullWidth
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <StoreField
+                label={t("quickEntry.store")}
+                value={session.store}
+                onChange={(value) => setSession((prev) => ({ ...prev, store: value }))}
+                helperText={t("quickEntry.storeHint")}
+              />
+            </Box>
 
             <Stack
               spacing={1.5}
@@ -180,10 +198,20 @@ export function QuickEntryPage() {
                 />
                 <TextField
                   type="number"
+                  label={t("fields.quantity")}
+                  value={draft.quantity ?? ""}
+                  onChange={(e) =>
+                    setDraftWithAutoAmount({ quantity: e.target.value === "" ? null : Number(e.target.value) })
+                  }
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  type="number"
                   label={t("fields.unitPrice")}
                   value={draft.unitPrice ?? ""}
                   onChange={(e) =>
-                    setDraft({ ...draft, unitPrice: e.target.value === "" ? null : Number(e.target.value) })
+                    setDraftWithAutoAmount({ unitPrice: e.target.value === "" ? null : Number(e.target.value) })
                   }
                   size="small"
                   fullWidth
@@ -200,27 +228,33 @@ export function QuickEntryPage() {
               </Stack>
               <Stack direction="row" spacing={1.5}>
                 <TextField
+                  select
+                  label={t("fields.paymentMethod")}
+                  value={draft.paymentMethodId ?? ""}
+                  onChange={(e) => setDraft({ ...draft, paymentMethodId: e.target.value || null })}
+                  size="small"
+                  sx={{ minWidth: 150 }}
+                >
+                  <MenuItem value="">—</MenuItem>
+                  {paymentMethods.map((pm) => (
+                    <MenuItem key={pm._id} value={pm._id}>
+                      {pm.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
                   label={t("fields.note")}
                   value={draft.note}
                   onChange={(e) => setDraft({ ...draft, note: e.target.value })}
                   size="small"
                   fullWidth
                 />
-                <TextField
-                  select
-                  label={t("fields.category")}
-                  value={draft.categoryId ?? ""}
-                  onChange={(e) => setDraft({ ...draft, categoryId: e.target.value || null })}
+                <CategorySelect
+                  value={draft.categoryId}
+                  onChange={(id) => setDraft({ ...draft, categoryId: id })}
                   size="small"
                   sx={{ minWidth: 160 }}
-                >
-                  <MenuItem value="">—</MenuItem>
-                  {categories.map((c) => (
-                    <MenuItem key={c._id} value={c._id}>
-                      {c.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                />
               </Stack>
               <Button type="submit" variant="outlined" startIcon={<AddIcon />}>
                 {t("quickEntry.addItem")}
@@ -245,7 +279,16 @@ export function QuickEntryPage() {
                     <TableCell align="right">
                       <Money amount={item.amount} />
                     </TableCell>
-                    <TableCell>{categories.find((c) => c._id === item.categoryId)?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      {/* Inline kategória-váltás közvetlenül a listából */}
+                      <CategorySelect
+                        value={item.categoryId}
+                        onChange={(id) => setSession((prev) => updateItem(prev, idx, { categoryId: id }))}
+                        size="small"
+                        label=""
+                        sx={{ minWidth: 140 }}
+                      />
+                    </TableCell>
                     <TableCell align="right">
                       <IconButton size="small" onClick={() => setSession((prev) => removeItem(prev, idx))}>
                         <DeleteIcon fontSize="small" />

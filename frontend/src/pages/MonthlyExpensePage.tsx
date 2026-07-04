@@ -33,9 +33,17 @@ import { useSnackbar } from "../components/SnackbarProvider";
 import { FormFields, normalizeForSubmit, type FieldDef, type FormValues } from "../components/CrudPage";
 import { FileField } from "../components/FileField";
 import { Money } from "../components/Money";
+import { StoreField } from "../components/StoreField";
+import { CategorySelect } from "../components/CategorySelect";
 import { BaseCostTable } from "./BaseCostPage";
 import { formatDate, monthLabel, todayInputDate } from "../lib/format";
-import type { BaseCost, Category, Expense, Sheet } from "../lib/types";
+import { applyAmountAutoFill } from "../lib/expenseForm";
+import type { BaseCost, Category, Expense, PaymentMethod, Sheet } from "../lib/types";
+
+/** Alap költség tételeinek összege (a kapcsolt lenyíló címkéjéhez és az Összesen sorhoz). */
+function baseCostSum(baseCost: BaseCost): number {
+  return baseCost.items.reduce((a, i) => a + i.amount, 0);
+}
 
 // --- 2. Havi költség ---
 export function MonthlyExpensePage() {
@@ -45,6 +53,7 @@ export function MonthlyExpensePage() {
   const { data: sheets = [] } = useList<Sheet>("sheets");
   const { data: baseCosts = [] } = useList<BaseCost>("base-costs");
   const { data: categories = [] } = useList<Category>("categories");
+  const { data: paymentMethods = [] } = useList<PaymentMethod>("payment-methods");
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = sheets.find((s) => s._id === selectedId) ?? sheets[0];
@@ -52,7 +61,7 @@ export function MonthlyExpensePage() {
   const { data: expenses = [] } = useList<Expense>(
     "expenses",
     { year: selected?.year ?? 0, month: selected?.month ?? 0 },
-    { enabled: Boolean(selected) }
+    { enabled: Boolean(selected) },
   );
 
   const createSheet = useCreate<Sheet>("sheets");
@@ -76,15 +85,35 @@ export function MonthlyExpensePage() {
     () => [
       { name: "name", labelKey: "expense.name", type: "text", required: true },
       { name: "date", labelKey: "fields.date", type: "date", required: true },
-      { name: "store", labelKey: "expense.store", type: "text" },
+      {
+        name: "store",
+        labelKey: "expense.store",
+        type: "custom",
+        renderCustom: (values, setValue) => (
+          <StoreField value={(values.store as string) ?? ""} onChange={(v) => setValue("store", v)} />
+        ),
+      },
+      { name: "quantity", labelKey: "fields.quantity", type: "number" },
       { name: "unitPrice", labelKey: "fields.unitPrice", type: "number" },
       { name: "amount", labelKey: "fields.amount", type: "money", required: true },
+      {
+        name: "paymentMethodId",
+        labelKey: "fields.paymentMethod",
+        type: "select",
+        options: paymentMethods.map((pm) => ({ value: pm._id, label: pm.name })),
+      },
       { name: "note", labelKey: "fields.note", type: "multiline" },
       {
         name: "categoryId",
         labelKey: "fields.category",
-        type: "select",
-        options: categories.map((c) => ({ value: c._id, label: c.name })),
+        type: "custom",
+        renderCustom: (values, setValue) => (
+          <CategorySelect
+            value={(values.categoryId as string) ?? null}
+            onChange={(id) => setValue("categoryId", id)}
+            fullWidth
+          />
+        ),
       },
       {
         name: "attachmentIds",
@@ -100,7 +129,7 @@ export function MonthlyExpensePage() {
         ),
       },
     ],
-    [categories, t]
+    [paymentMethods, t],
   );
 
   const submitExpense = () => {
@@ -113,7 +142,10 @@ export function MonthlyExpensePage() {
       setExpenseValues(null);
     };
     if (editingExpense) {
-      updateExpense.mutate({ ...(data as Partial<Expense>), _id: editingExpense._id }, { onSuccess, onError: showError });
+      updateExpense.mutate(
+        { ...(data as Partial<Expense>), _id: editingExpense._id },
+        { onSuccess, onError: showError },
+      );
     } else {
       createExpense.mutate(data as Partial<Expense>, { onSuccess, onError: showError });
     }
@@ -121,6 +153,7 @@ export function MonthlyExpensePage() {
 
   const total = expenses.reduce((a, e) => a + e.amount, 0);
   const categoryName = (id: string | null) => categories.find((c) => c._id === id)?.name ?? "—";
+  const paymentMethodName = (id: string | null) => paymentMethods.find((pm) => pm._id === id)?.name ?? "—";
 
   return (
     <Box>
@@ -162,19 +195,16 @@ export function MonthlyExpensePage() {
               defaultValue={selected.income}
               key={selected._id}
               onBlur={(e) =>
-                updateSheet.mutate(
-                  { _id: selected._id, income: Number(e.target.value || 0) },
-                  { onError: showError }
-                )
+                updateSheet.mutate({ _id: selected._id, income: Number(e.target.value || 0) }, { onError: showError })
               }
               sx={{ width: 180 }}
             />
             <Typography variant="body2" color="text.secondary">
-              {t("common.total")}: <Money amount={total} color="negative" />
+              {t("common.delete")}:{" "}
+              <IconButton size="small" color="error" onClick={() => requestSheetDelete(selected._id)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
             </Typography>
-            <IconButton size="small" color="error" onClick={() => requestSheetDelete(selected._id)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
           </>
         )}
       </Stack>
@@ -187,6 +217,8 @@ export function MonthlyExpensePage() {
               <Typography variant="subtitle1">
                 {t("monthly.linkedBaseCost")}
                 {linkedBaseCost ? ` — ${linkedBaseCost.year}. ${monthLabel(linkedBaseCost.month)}` : ""}
+                {" | "}
+                {t("common.total")}: <Money amount={total} color="neutral" />
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -220,8 +252,10 @@ export function MonthlyExpensePage() {
                     <TableCell>{t("expense.name")}</TableCell>
                     <TableCell>{t("fields.date")}</TableCell>
                     <TableCell>{t("expense.store")}</TableCell>
+                    <TableCell align="right">{t("fields.quantity")}</TableCell>
                     <TableCell align="right">{t("fields.unitPrice")}</TableCell>
                     <TableCell align="right">{t("fields.amount")}</TableCell>
+                    <TableCell>{t("fields.paymentMethod")}</TableCell>
                     <TableCell>{t("fields.category")}</TableCell>
                     <TableCell>{t("fields.note")}</TableCell>
                     <TableCell align="right">{t("common.actions")}</TableCell>
@@ -233,12 +267,14 @@ export function MonthlyExpensePage() {
                       <TableCell>{expense.name}</TableCell>
                       <TableCell>{formatDate(expense.date)}</TableCell>
                       <TableCell>{expense.store}</TableCell>
+                      <TableCell align="right">{expense.quantity ?? "—"}</TableCell>
                       <TableCell align="right">
                         {expense.unitPrice !== null ? <Money amount={expense.unitPrice} /> : "—"}
                       </TableCell>
                       <TableCell align="right">
-                        <Money amount={expense.amount} color="negative" />
+                        <Money amount={expense.amount} color="neutral" />
                       </TableCell>
+                      <TableCell>{paymentMethodName(expense.paymentMethodId)}</TableCell>
                       <TableCell>{categoryName(expense.categoryId)}</TableCell>
                       <TableCell sx={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>
                         {expense.note}
@@ -261,9 +297,20 @@ export function MonthlyExpensePage() {
                   ))}
                   {expenses.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 3, color: "text.secondary" }}>
+                      <TableCell colSpan={10} align="center" sx={{ py: 3, color: "text.secondary" }}>
                         {t("common.empty")}
                       </TableCell>
+                    </TableRow>
+                  )}
+                  {expenses.length > 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} align="right" sx={{ fontWeight: 600 }}>
+                        {t("common.total")}:
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>
+                        <Money amount={total} color="negative" />
+                      </TableCell>
+                      <TableCell colSpan={4} />
                     </TableRow>
                   )}
                 </TableBody>
@@ -311,7 +358,7 @@ export function MonthlyExpensePage() {
                 <MenuItem value="">—</MenuItem>
                 {baseCosts.map((b) => (
                   <MenuItem key={b._id} value={b._id}>
-                    {b.year}. {monthLabel(b.month)}
+                    {b.year}. {monthLabel(b.month)} — <Money amount={baseCostSum(b)} />
                   </MenuItem>
                 ))}
               </TextField>
@@ -337,7 +384,7 @@ export function MonthlyExpensePage() {
                     setSelectedId(doc._id);
                   },
                   onError: showError,
-                }
+                },
               );
             }}
           >
@@ -354,7 +401,9 @@ export function MonthlyExpensePage() {
             <FormFields
               fields={expenseFields}
               values={expenseValues}
-              setValue={(name, value) => setExpenseValues((prev) => ({ ...prev, [name]: value }))}
+              setValue={(name, value) =>
+                setExpenseValues((prev) => applyAmountAutoFill({ ...prev, [name]: value }, name))
+              }
             />
           )}
         </DialogContent>

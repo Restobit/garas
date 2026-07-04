@@ -11,7 +11,31 @@ export interface Category extends BaseDoc {
 
 export interface PaymentMethod extends BaseDoc {
   name: string;
+  order: number;
   isSeed: boolean;
+}
+
+export interface Store extends BaseDoc {
+  name: string;
+  order: number;
+  isSeed: boolean;
+}
+
+export interface UtilityCategory extends BaseDoc {
+  name: string;
+  order: number;
+  isSeed: boolean;
+}
+
+export interface Income extends BaseDoc {
+  category: "fizetes" | "egyeb";
+  companyName: string;
+  startDate: string | null;
+  priceHistoryId: string | null;
+  source: string;
+  amount: number | null;
+  note: string;
+  date: string | null;
 }
 
 export interface Expense extends BaseDoc {
@@ -20,8 +44,10 @@ export interface Expense extends BaseDoc {
   name: string;
   date: string;
   store: string;
+  quantity: number | null;
   unitPrice: number | null;
   amount: number;
+  paymentMethodId: string | null;
   note: string;
   categoryId: string | null;
   attachmentIds: string[];
@@ -88,7 +114,9 @@ export interface Housing extends BaseDoc {
 }
 
 export interface Utility extends BaseDoc {
-  type: "water" | "electricity" | "gas" | "internet";
+  categoryId: string | null;
+  /** Régi fix lista öröksége — új tételeknél a categoryId a mérvadó. */
+  type: "water" | "electricity" | "gas" | "internet" | null;
   name: string;
   paymentMethodId: string | null;
   dueDay: number | null;
@@ -104,7 +132,7 @@ export interface Insurance extends BaseDoc {
   documentId: string | null;
   invoiceId: string | null;
   note: string;
-  linkedType: "car" | "home" | "person" | null;
+  linkedType: "car" | "motor" | "home" | "person" | null;
   linkedId: string | null;
   linkedName: string;
 }
@@ -153,7 +181,7 @@ export interface Saving extends BaseDoc {
 }
 
 export interface PriceHistoryEntry extends BaseDoc {
-  entityType: "service" | "insurance" | "transport" | "utility" | "loan" | "rent";
+  entityType: "service" | "insurance" | "transport" | "utility" | "loan" | "rent" | "fizetes";
   entityId: string | null;
   amount: number;
   justification: string;
@@ -175,6 +203,8 @@ export interface DashboardData {
   topStores: { name: string; amount: number }[];
   investmentTotal: number;
   savingTotal: number;
+  /** Régebbi (újraindítás előtti) backend-válaszból hiányozhat. */
+  income?: { salary: number; other: number };
   yearlySummary: {
     utility: number;
     transport: number;

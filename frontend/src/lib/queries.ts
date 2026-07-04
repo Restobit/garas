@@ -51,6 +51,23 @@ export function useDelete(entity: string, extraInvalidate: string[] = []) {
   });
 }
 
+/** Drag-and-drop sorrend azonnali mentése: a lista új sorrendjét kapja meg. */
+export function useReorder<T extends BaseDoc>(entity: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rows: T[]) =>
+      api.post<T[]>(
+        `/${entity}/reorder`,
+        { ids: rows.map((r) => r._id) },
+      ),
+    onMutate: (rows) => {
+      // Optimista frissítés, hogy a sor ne ugorjon vissza a válaszig
+      qc.setQueryData([entity, {}], rows);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: [entity] }),
+  });
+}
+
 export function useUsageCheck() {
   return useMutation({
     mutationFn: ({ entityType, id }: { entityType: string; id: string }) =>

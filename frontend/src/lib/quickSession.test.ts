@@ -7,6 +7,7 @@ import {
   saveSession,
   sessionKey,
   toExpensePayload,
+  updateItem,
   type QuickItem,
   type QuickSession,
 } from "./quickSession";
@@ -28,8 +29,10 @@ function memoryStorage(): Storage {
 const item = (name: string, amount: number): QuickItem => ({
   name,
   date: "2026-06-05",
+  quantity: null,
   unitPrice: null,
   amount,
+  paymentMethodId: null,
   note: "",
   categoryId: null,
 });
@@ -60,6 +63,23 @@ describe("quickSession (blokk gyors rögzítés munkamenet)", () => {
     session = removeItem(session, 0);
     expect(session.items).toHaveLength(1);
     expect(session.items[0]?.name).toBe("vaj");
+  });
+
+  it("updateItem inline módosít (pl. kategória-váltás a listából)", () => {
+    let session: QuickSession = { store: "Lidl", items: [item("tej", 450), item("vaj", 900)] };
+    session = updateItem(session, 1, { categoryId: "cat-1" });
+    expect(session.items[0]?.categoryId).toBeNull();
+    expect(session.items[1]?.categoryId).toBe("cat-1");
+    expect(session.items[1]?.name).toBe("vaj");
+  });
+
+  it("a payload átadja a darabszámot és a fizetési módot", () => {
+    const session: QuickSession = {
+      store: "Tesco",
+      items: [{ ...item("chips", 1598), quantity: 2, unitPrice: 799, paymentMethodId: "pm-1" }],
+    };
+    const payload = toExpensePayload(session, "receipt-1");
+    expect(payload[0]).toMatchObject({ quantity: 2, unitPrice: 799, paymentMethodId: "pm-1" });
   });
 
   it("mentés után a munkamenet törlődik", () => {

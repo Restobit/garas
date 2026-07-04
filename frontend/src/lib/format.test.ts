@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatMoney, monthLabel, toInputDate } from "./format";
+import { capitalizeFirst, formatDate, formatMoney, monthLabel, toInputDate } from "./format";
+
+describe("capitalizeFirst (új kategória neve)", () => {
+  it("kezdő nagybetűt ad, magyar ékezettel is", () => {
+    expect(capitalizeFirst("energiaital")).toBe("Energiaital");
+    expect(capitalizeFirst("édesség")).toBe("Édesség");
+  });
+
+  it("levágja a szóközöket, üresre üreset ad", () => {
+    expect(capitalizeFirst("  chips ")).toBe("Chips");
+    expect(capitalizeFirst("   ")).toBe("");
+  });
+
+  it("a már nagybetűs nevet nem rontja el", () => {
+    expect(capitalizeFirst("Keksz")).toBe("Keksz");
+  });
+});
 
 describe("formatMoney", () => {
   it("forintot ezres tagolással, tizedesek nélkül formáz", () => {
