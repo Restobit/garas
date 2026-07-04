@@ -1,0 +1,229 @@
+{
+  "app": {
+    "name": "Garas",
+    "subtitle": "HKR — Háztartási Költség Rendszer"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "monthly": "Havi költség",
+    "baseCost": "Alap költség",
+    "paymentMethod": "Fizetési mód",
+    "subscription": "Előfizetés",
+    "housing": "Lakhatás",
+    "utility": "Rezsi",
+    "insurance": "Biztosítás",
+    "car": "Autó",
+    "transport": "Közlekedés",
+    "investment": "Befektetés",
+    "saving": "Megtakarítás",
+    "priceHistory": "Ártörténet",
+    "receipt": "Blokk",
+    "settings": "Beállítások",
+    "profile": "Profil"
+  },
+  "header": {
+    "menu": "Menü",
+    "lightMode": "Világos mód",
+    "darkMode": "Sötét mód",
+    "themeToggle": "Téma váltása",
+    "incognito": "Inkognitó mód",
+    "notifications": "Értesítések",
+    "profile": "Profil"
+  },
+  "common": {
+    "add": "Hozzáadás",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "delete": "Törlés",
+    "edit": "Szerkesztés",
+    "close": "Bezárás",
+    "actions": "Műveletek",
+    "loading": "Betöltés…",
+    "empty": "Nincs megjeleníthető adat",
+    "saved": "Sikeres mentés",
+    "confirmDeleteTitle": "Biztosan törlöd?",
+    "notUsedAnywhere": "Még nincs sehol használva",
+    "usedAt": "A törölni kívánt elem az alábbi helyeken van használatban:",
+    "total": "Összesen",
+    "year": "Év",
+    "month": "Hónap"
+  },
+  "fields": {
+    "name": "Név",
+    "price": "Ár",
+    "paymentMethod": "Fizetési mód",
+    "status": "Státusz",
+    "type": "Típus",
+    "category": "Kategória",
+    "date": "Dátum",
+    "amount": "Összeg",
+    "note": "Megjegyzés",
+    "justification": "Indoklás",
+    "currency": "Pénznem",
+    "unitPrice": "Darabár"
+  },
+  "status": {
+    "active": "Aktív",
+    "cancelled": "Lemondva",
+    "terminated": "Megszűnt"
+  },
+  "subscription": {
+    "startDate": "Előfizetés kezdete"
+  },
+  "housing": {
+    "loan": "Hitel",
+    "rent": "Albérlet",
+    "startDate": "Kezdeti dátum",
+    "terminationDate": "Megszűnés dátuma"
+  },
+  "utility": {
+    "water": "Víz",
+    "electricity": "Villany",
+    "gas": "Gáz",
+    "internet": "Internet",
+    "providerName": "Szolgáltató / megnevezés",
+    "dueDay": "Fizetési nap (hónap napja)"
+  },
+  "transport": {
+    "bkk_pass": "BKK havidíj",
+    "ticket": "Közlekedési jegy",
+    "train": "Vonat",
+    "bus": "Busz",
+    "plane": "Repülő",
+    "ferry": "Komp",
+    "boat": "Hajó",
+    "fuel": "Autó üzemanyag"
+  },
+  "investment": {
+    "name": "Mibe fektettem",
+    "value": "Érték",
+    "exchangeRate": "Átváltási árfolyam (Ft)",
+    "amountInHUF": "Összeg forintban"
+  },
+  "saving": {
+    "destination": "Hova került",
+    "value": "Értéke",
+    "duration": "Futamidő",
+    "maturityDate": "Lejárati dátum"
+  },
+  "insurance": {
+    "name": "Biztosítás neve",
+    "frequency": "Fizetési gyakoriság",
+    "dueDate": "Esedékesség",
+    "paymentDeadline": "Fizetési határidő",
+    "linked": "Kapcsolódás",
+    "linkedType": "Kapcsolódás típusa",
+    "linkedCar": "Autó",
+    "linkedHome": "Lakás",
+    "linkedPerson": "Személy",
+    "linkedPersonName": "Személy neve",
+    "linkedEntity": "Kapcsolódó elem",
+    "document": "Hozzá tartozó dokumentum",
+    "invoice": "Számla"
+  },
+  "frequency": {
+    "monthly": "Havonta",
+    "quarterly": "Negyedévente",
+    "semiannual": "Félévente",
+    "annual": "Évente"
+  },
+  "priceHistory": {
+    "service": "Szolgáltatás",
+    "insurance": "Biztosítás",
+    "transport": "Közlekedés",
+    "utility": "Rezsi",
+    "loan": "Hitel",
+    "rent": "Albérlet",
+    "entity": "Kapcsolódó elem",
+    "addedDate": "Hozzáadás dátuma",
+    "effectiveDate": "Életbelépés dátuma",
+    "modifiedDate": "Módosítás dátuma"
+  },
+  "car": {
+    "purchaseDate": "Mikor vettem",
+    "purchasePrice": "Vételár",
+    "km": "Kilométer",
+    "totalSpent": "Összes ráköltés",
+    "serviceRecords": "Szerviz bejegyzések",
+    "purchases": "Vásárlások",
+    "details": "Részletek",
+    "linkedInsurances": "Kapcsolódó biztosítások"
+  },
+  "receipt": {
+    "upload": "Blokk feltöltése",
+    "takePhoto": "Fotó készítése",
+    "uploaded": "Blokk feltöltve",
+    "image": "Blokk",
+    "uploadedAt": "Feltöltve",
+    "processed": "Feldolgoztam",
+    "processedDate": "Feldolgozás dátuma",
+    "quickEntry": "Gyors rögzítés",
+    "filterAll": "Összes",
+    "filterUnprocessed": "Feldolgozatlan",
+    "filterProcessed": "Feldolgozott"
+  },
+  "quickEntry": {
+    "title": "Blokk — gyors rögzítés",
+    "desktopOnly": "A gyors adatbeviteli nézet csak asztali (desktop) képernyőn érhető el. Mobilon a blokk feltöltése után a tételes rögzítés desktopon történik.",
+    "store": "Hol vettem",
+    "storeHint": "Egyszer kell megadni — minden ebből a blokkból felvitt tételhez ez kerül",
+    "addItem": "Hozzáadás",
+    "emptyList": "Még nincs tétel a listában — a tételek mentésig csak ebben a böngészőben tárolódnak",
+    "savedAll": "A tételek elmentve a kiválasztott hónap költségei közé"
+  },
+  "baseCost": {
+    "paid": "Befizetve",
+    "dueDate": "Határidő",
+    "paidDate": "Fizetés dátuma",
+    "select": "Alap költség táblázat",
+    "effectiveDate": "Felhasználás dátuma",
+    "refill": "Újratöltés a forrásokból",
+    "addManualItem": "Kézi tétel",
+    "created": "Alap költség létrehozva és automatikusan feltöltve",
+    "refilled": "Táblázat újratöltve a forrásadatokból",
+    "createTitle": "Új Alap költség",
+    "createHint": "A Felhasználás dátuma alapján a táblázat automatikusan feltöltődik a Biztosítás, Előfizetés, Közlekedés, Rezsi és Lakhatás adott időszakra érvényes tételeivel.",
+    "noneYet": "Még nincs Alap költség táblázat — hozz létre egyet a Hozzáadás gombbal."
+  },
+  "monthly": {
+    "createSheet": "Új hónap",
+    "selectSheet": "Hónap",
+    "income": "Havi bevétel",
+    "linkedBaseCost": "Kapcsolt Alap költség",
+    "noBaseCost": "Ehhez a hónaphoz nincs Alap költség kapcsolva.",
+    "items": "Havi költségtételek",
+    "noneYet": "Még nincs létrehozott hónap — hozz létre egyet az Új hónap gombbal."
+  },
+  "dashboard": {
+    "subscriptions": "Előfizetések",
+    "investmentTotal": "Befektetés (év)",
+    "savingTotal": "Megtakarítás (év)",
+    "yearlyIncome": "Bevétel (év)",
+    "yearlyExpense": "Kiadás (év)",
+    "monthlyTable": "Havi bevétel és kiadás",
+    "expense": "Kiadás",
+    "topCategories": "Legtöbb költés kategóriánként",
+    "topStores": "Hol vásároltam a legtöbbet",
+    "yearlySummary": "Éves összesítés kategóriánként"
+  },
+  "settings": {
+    "language": "Nyelv",
+    "languageHint": "Az angol fordítás tartalma később készül el",
+    "currency": "Devizanem",
+    "currencyHint": "Megjelenítési alapbeállítás — a Befektetés tételenkénti pénznemét nem érinti",
+    "categories": "Kategóriák"
+  },
+  "profile": {
+    "devMode": "Fejlesztői mód: nincs Clerk kulcs beállítva, a profilkezelés (email, jelszó, profilkép) a Clerk bekapcsolásával érhető el."
+  },
+  "files": {
+    "upload": "Fájl csatolása",
+    "attachment": "Csatolmány",
+    "tooLarge": "A(z) {{name}} fájl túl nagy (max 5 MB)"
+  },
+  "expense": {
+    "name": "Mit vettem",
+    "store": "Bolt / hol vettem",
+    "attachments": "Dokumentum csatolás (pdf, jpg, png, xlsx, doc, gif — max 5 MB)"
+  }
+}
