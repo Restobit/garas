@@ -2,18 +2,16 @@
 
 Több felhasználós, local-first háztartási költségkövető webalkalmazás. Minden felhasználó kizárólag a saját adatait látja és kezeli.
 
-**Ajánlott repository név:** `garas-hkr`
-
 ## Tech stack
 
-| Réteg | Technológia |
-|---|---|
-| Frontend | React 18 + TypeScript, Vite, MUI v5, TanStack React Query, react-i18next |
-| Backend | Node.js + Express (TypeScript, strict), REST API |
-| Adatbázis | MongoDB (Mongoose), fájlok GridFS-ben |
-| Auth | Clerk (JWT ellenőrzés backend middleware-ben) |
-| Tesztek | Vitest (unit), Playwright (E2E) |
-| Infra | Docker + Docker Compose; élesben Vercel frontend + VPS backend |
+| Réteg     | Technológia                                                              |
+| --------- | ------------------------------------------------------------------------ |
+| Frontend  | React 18 + TypeScript, Vite, MUI v5, TanStack React Query, react-i18next |
+| Backend   | Node.js + Express (TypeScript, strict), REST API                         |
+| Adatbázis | MongoDB (Mongoose), fájlok GridFS-ben                                    |
+| Auth      | Clerk (JWT ellenőrzés backend middleware-ben)                            |
+| Tesztek   | Vitest (unit), Playwright (E2E)                                          |
+| Infra     | Docker + Docker Compose; élesben Vercel frontend + VPS backend           |
 
 ## Gyors indulás (lokális, Docker Compose)
 
@@ -84,7 +82,7 @@ A prod compose nem publikálja a Mongo portot, csak a backend :4000-et — elé 
 1. Importáld a repót a Vercelen, **Root Directory: `frontend`** (a `frontend/vercel.json` kezeli az SPA rewrite-ot)
 2. Environment variables:
    - `VITE_API_URL` = a backend publikus URL-je (pl. `https://api.sajatdomain.hu`)
-   - `VITE_CLERK_PUBLISHABLE_KEY` = pk_live_...
+   - `VITE_CLERK_PUBLISHABLE_KEY` = pk*live*...
 3. Deploy — build parancs: `npm run build`, output: `dist`
 
 ## Főbb funkciók
